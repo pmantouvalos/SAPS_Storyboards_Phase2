@@ -1,0 +1,46 @@
+<svg width="700" height="200" viewBox="0 0 700 200"
+     xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <filter id="pulseGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <text x="50%" y="60" text-anchor="middle"
+        font-family="Inter, Arial" font-size="44"
+        fill="white" letter-spacing="2" filter="url(#pulseGlow)">
+    SAPS Project
+    <animate attributeName="opacity"
+             values="0.6;1;0.6"
+             dur="2.4s"
+             repeatCount="indefinite"/>
+  </text>
+
+  <text x="50%" y="115" text-anchor="middle"
+        font-family="Inter, Arial" font-size="34"
+        fill="white" opacity="0.9" filter="url(#pulseGlow)">
+    Phase 2
+    <animate attributeName="opacity"
+             values="0.5;1;0.5"
+             dur="2.4s"
+             begin="0.3s"
+             repeatCount="indefinite"/>
+  </text>
+
+  <text x="50%" y="165" text-anchor="middle"
+        font-family="Inter, Arial" font-size="28"
+        fill="white" opacity="0.85" filter="url(#pulseGlow)">
+    Storyboards
+    <animate attributeName="opacity"
+             values="0.4;1;0.4"
+             dur="2.4s"
+             begin="0.6s"
+             repeatCount="indefinite"/>
+  </text>
+
+</svg>
