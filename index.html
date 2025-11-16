@@ -59,121 +59,122 @@
 
   <!-- JAVASCRIPT -->
   <script>
-    (function () {
-      const container = document.getElementById("container");
-      const viewport = document.getElementById("viewport");
-      const imageWrapper = document.getElementById("imageWrapper");
-      const img = document.getElementById("diagramImage");
-      const toggleThemeBtn = document.getElementById("toggleThemeBtn");
-      const resetViewBtn = document.getElementById("resetViewBtn");
-      const loader = document.getElementById("loader");
+(function () {
+  const container = document.getElementById("container");
+  const viewport = document.getElementById("viewport");
+  const imageWrapper = document.getElementById("imageWrapper");
+  const img = document.getElementById("diagramImage");
+  const toggleThemeBtn = document.getElementById("toggleThemeBtn");
+  const resetViewBtn = document.getElementById("resetViewBtn");
+  const loader = document.getElementById("loader");
 
-      let scale = 1,
-        minScale = 0.05,
-        maxScale = 6,
-        translateX = 0,
-        translateY = 0;
+  let scale = 1,
+    minScale = 0.05,
+    maxScale = 6,
+    translateX = 0,
+    translateY = 0;
 
-      let isDragging = false;
-      let dragStartX = 0,
-        dragStartY = 0,
-        startTranslateX = 0,
-        startTranslateY = 0;
+  let isDragging = false;
+  let dragStartX = 0,
+    dragStartY = 0,
+    startTranslateX = 0,
+    startTranslateY = 0;
 
-      function applyTransform() {
-        imageWrapper.style.transform =
-          `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-      }
+  function applyTransform() {
+    imageWrapper.style.transform =
+      `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  }
 
-      // Zoom με ροδάκι
-      viewport.addEventListener(
-        "wheel",
-        function (e) {
-          e.preventDefault();
+  // --- ZOOM ---
+  viewport.addEventListener(
+    "wheel",
+    function (e) {
+      e.preventDefault();
 
-          const rect = viewport.getBoundingClientRect();
-          const offsetX = e.clientX - rect.left;
-          const offsetY = e.clientY - rect.top;
+      const rect = viewport.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
 
-          const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
-          const newScale = Math.min(
-            maxScale,
-            Math.max(minScale, scale * zoomFactor)
-          );
-
-          const ratio = newScale / scale;
-          translateX = offsetX - (offsetX - translateX) * ratio;
-          translateY = offsetY - (offsetY - translateY) * ratio;
-
-          scale = newScale;
-          applyTransform();
-        },
-        { passive: false }
+      const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+      const newScale = Math.min(
+        maxScale,
+        Math.max(minScale, scale * zoomFactor)
       );
 
-      // Drag για pan
-      viewport.addEventListener("mousedown", function (e) {
-        isDragging = true;
-        container.classList.add("dragging");
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        startTranslateX = translateX;
-        startTranslateY = translateY;
-      });
+      const ratio = newScale / scale;
+      translateX = offsetX - (offsetX - translateX) * ratio;
+      translateY = offsetY - (offsetY - translateY) * ratio;
 
-      window.addEventListener("mousemove", function (e) {
-        if (!isDragging) return;
-        translateX = startTranslateX + (e.clientX - dragStartX);
-        translateY = startTranslateY + (e.clientY - dragStartY);
-        applyTransform();
-      });
+      scale = newScale;
+      applyTransform();
+    },
+    { passive: false }
+  );
 
-      window.addEventListener("mouseup", function () {
-        isDragging = false;
-        container.classList.remove("dragging");
-      });
+  // --- DRAG START ---
+  viewport.addEventListener("mousedown", function (e) {
+    isDragging = true;
+    container.classList.add("dragging");
 
-      viewport.addEventListener("mouseleave", function () {
-        isDragging = false;
-        container.classList.remove("dragging");
-      });
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    startTranslateX = translateX;
+    startTranslateY = translateY;
+  });
 
-      // Fit-to-screen + κεντράρισμα
-      function resetView() {
-        const vw = viewport.clientWidth;
-        const vh = viewport.clientHeight;
-        const iw = img.naturalWidth;
-        const ih = img.naturalHeight;
+  // --- DRAG UPDATE (global for smooth movement) ---
+  window.addEventListener("mousemove", function (e) {
+    if (!isDragging) return;
 
-        if (!iw || !ih) return;
+    const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
 
-        const fitScale = Math.min(vw / iw, vh / ih);
-        scale = Math.min(1, Math.max(minScale, fitScale));
+    translateX = startTranslateX + dx;
+    translateY = startTranslateY + dy;
 
-        const displayW = iw * scale;
-        const displayH = ih * scale;
-        translateX = (vw - displayW) / 2;
-        translateY = (vh - displayH) / 2;
+    applyTransform();
+  });
 
-        applyTransform();
-      }
+  // --- DRAG END (global so it ALWAYS detects release) ---
+  window.addEventListener("mouseup", function () {
+    isDragging = false;
+    container.classList.remove("dragging");
+  });
 
-      // Όταν φορτώσει η εικόνα → στήνουμε view + κρύβουμε loader
-      img.addEventListener("load", () => {
-        resetView();
-        setTimeout(() => {
-          loader.classList.add("hidden");
-        }, 400);
-      });
+  // --- FIT TO SCREEN ---
+  function resetView() {
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
+    const iw = img.naturalWidth;
+    const ih = img.naturalHeight;
 
-      resetViewBtn.addEventListener("click", resetView);
+    if (!iw || !ih) return;
 
-      // Light / Dark toggle
-      toggleThemeBtn.addEventListener("click", function () {
-        const isLight = document.body.classList.toggle("light");
-        toggleThemeBtn.textContent = isLight ? "Dark mode" : "Light mode";
-      });
-    })();
-  </script>
+    const fitScale = Math.min(vw / iw, vh / ih);
+    scale = Math.min(1, Math.max(minScale, fitScale));
+
+    const displayW = iw * scale;
+    const displayH = ih * scale;
+
+    translateX = (vw - displayW) / 2;
+    translateY = (vh - displayH) / 2;
+
+    applyTransform();
+  }
+
+  img.addEventListener("load", () => {
+    resetView();
+    setTimeout(() => loader.classList.add("hidden"), 400);
+  });
+
+  resetViewBtn.addEventListener("click", resetView);
+
+  // --- THEME TOGGLE (Fixed) ---
+  toggleThemeBtn.addEventListener("click", function () {
+    const isLight = document.body.classList.toggle("light");
+    toggleThemeBtn.textContent = isLight ? "Dark mode" : "Light mode";
+  });
+})();
+</script>
 </body>
 </html>
