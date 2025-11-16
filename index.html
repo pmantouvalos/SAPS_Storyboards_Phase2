@@ -1,263 +1,164 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-  <meta charset="UTF-8">
-  <title>SAPS Storyboards Diagram</title>
-  <style>
-    :root {
-      --bg-color: #111;
-      --panel-bg: rgba(0, 0, 0, 0.7);
-      --text-color: #f5f5f5;
-      --btn-bg: #222;
-      --btn-bg-hover: #333;
-      --btn-border: #555;
-    }
-
-    body.light {
-      --bg-color: #f5f5f5;
-      --panel-bg: rgba(255, 255, 255, 0.9);
-      --text-color: #111;
-      --btn-bg: #ffffff;
-      --btn-bg-hover: #e6e6e6;
-      --btn-border: #ccc;
-    }
-
-    body {
-      margin: 0;
-      background: var(--bg-color);
-      color: var(--text-color);
-      font-family: Arial, sans-serif;
-      overflow: hidden;
-    }
-
-    .toolbar {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-      background: var(--panel-bg);
-      border-radius: 8px;
-      padding: 8px 10px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      border: 1px solid var(--btn-border);
-      backdrop-filter: blur(6px);
-    }
-
-    .toolbar button,
-    .toolbar a {
-      border: 1px solid var(--btn-border);
-      background: var(--btn-bg);
-      color: var(--text-color);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-    }
-
-    .toolbar button:hover,
-    .toolbar a:hover {
-      background: var(--btn-bg-hover);
-    }
-
-    .toolbar small {
-      font-size: 11px;
-      opacity: 0.8;
-    }
-
-    .container {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      position: relative;
-      cursor: grab;
-    }
-
-    .container.dragging {
-      cursor: grabbing;
-    }
-
-    .viewport {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      position: relative;
-    }
-
-    .image-wrapper {
-      transform-origin: 0 0;
-      will-change: transform;
-    }
-
-    img {
-      display: block;
-      max-width: none;
-      height: auto;
-      image-rendering: auto;
-      border: 1px solid #444;
-      box-shadow: 0 0 15px rgba(0,0,0,0.7);
-    }
-
-    .hint {
-      position: fixed;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--panel-bg);
-      color: var(--text-color);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      border: 1px solid var(--btn-border);
-    }
-
-    @media (max-width: 600px) {
-      .toolbar {
-        flex-wrap: wrap;
-      }
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>SAPS Storyboards Viewer</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
 </head>
+
 <body>
-  <div class="toolbar">
+
+  <!-- CINEMATIC LOADING SCREEN -->
+  <div id="loader" class="loader-screen">
+    <div class="loader-inner">
+      <img src="logo.svg" class="loader-logo" />
+
+      <div class="loader-ring"></div>
+      <div class="loader-text">Loading SAPS Diagram…</div>
+    </div>
+  </div>
+
+  <!-- TOP TOOLBAR -->
+  <div class="toolbar fade-in">
     <button id="toggleThemeBtn">Light mode</button>
     <button id="resetViewBtn">Reset view</button>
     <a href="sapsfinalstoryboards.drawio.png" download>Download PNG</a>
     <small>Scroll = zoom · Drag = pan</small>
   </div>
 
+  <!-- MAIN DIAGRAM AREA -->
   <div class="container" id="container">
     <div class="viewport" id="viewport">
       <div class="image-wrapper" id="imageWrapper">
-        <img id="diagramImage" src="sapsfinalstoryboards.drawio.png" alt="SAPS Storyboards Diagram">
+        <img
+          id="diagramImage"
+          src="sapsfinalstoryboards.drawio.png"
+          alt="SAPS Storyboards Diagram"
+        />
       </div>
     </div>
   </div>
 
-  <div class="hint">
+  <!-- HINT MESSAGE -->
+  <div class="hint fade-in-slow">
     Χρησιμοποίησε το ροδάκι για zoom και drag με το ποντίκι για μετακίνηση.
-                      Made by our team for SAPS project.
-                                Chania,2025.
   </div>
 
-  <script>
-    (function() {
-      const container = document.getElementById('container');
-      const viewport = document.getElementById('viewport');
-      const imageWrapper = document.getElementById('imageWrapper');
-      const img = document.getElementById('diagramImage');
-      const toggleThemeBtn = document.getElementById('toggleThemeBtn');
-      const resetViewBtn = document.getElementById('resetViewBtn');
+  <!-- CREDITS -->
+  <div class="credits fade-in-slower">
+    Made by our team for the SAPS Project.<br />
+    Chania, 2025.
+  </div>
 
-      let scale = 1;
-      let minScale = 0.1;
-      let maxScale = 4;
-      let translateX = 0;
-      let translateY = 0;
+  <!-- JAVASCRIPT -->
+  <script>
+    (function () {
+      const container = document.getElementById("container");
+      const viewport = document.getElementById("viewport");
+      const imageWrapper = document.getElementById("imageWrapper");
+      const img = document.getElementById("diagramImage");
+      const toggleThemeBtn = document.getElementById("toggleThemeBtn");
+      const resetViewBtn = document.getElementById("resetViewBtn");
+      const loader = document.getElementById("loader");
+
+      let scale = 1,
+        minScale = 0.05,
+        maxScale = 6,
+        translateX = 0,
+        translateY = 0;
 
       let isDragging = false;
-      let dragStartX = 0;
-      let dragStartY = 0;
-      let startTranslateX = 0;
-      let startTranslateY = 0;
+      let dragStartX = 0,
+        dragStartY = 0,
+        startTranslateX = 0,
+        startTranslateY = 0;
 
       function applyTransform() {
         imageWrapper.style.transform =
           `translate(${translateX}px, ${translateY}px) scale(${scale})`;
       }
 
-      function clamp(value, min, max) {
-        return Math.min(max, Math.max(min, value));
-      }
+      viewport.addEventListener(
+        "wheel",
+        function (e) {
+          e.preventDefault();
 
-      // Zoom με ροδάκι, με κέντρο το σημείο του mouse
-      viewport.addEventListener('wheel', function(e) {
-        e.preventDefault();
+          const rect = viewport.getBoundingClientRect();
+          const offsetX = e.clientX - rect.left;
+          const offsetY = e.clientY - rect.top;
 
-        const rect = viewport.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
+          const zoomFactor = e.deltaY < 0 ? 1.12 : 0.88;
+          const newScale = Math.min(
+            maxScale,
+            Math.max(minScale, scale * zoomFactor)
+          );
 
-        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-        const newScale = clamp(scale * zoomFactor, minScale, maxScale);
+          const ratio = newScale / scale;
+          translateX = offsetX - (offsetX - translateX) * ratio;
+          translateY = offsetY - (offsetY - translateY) * ratio;
 
-        // Προσαρμογή μετατόπισης ώστε το σημείο κάτω από τον κέρσορα
-        // να μείνει περίπου στο ίδιο σημείο
-        const scaleRatio = newScale / scale;
-        translateX = offsetX - (offsetX - translateX) * scaleRatio;
-        translateY = offsetY - (offsetY - translateY) * scaleRatio;
+          scale = newScale;
+          applyTransform();
+        },
+        { passive: false }
+      );
 
-        scale = newScale;
-        applyTransform();
-      }, { passive: false });
-
-      // Drag για pan
-      viewport.addEventListener('mousedown', function(e) {
+      viewport.addEventListener("mousedown", function (e) {
         isDragging = true;
-        container.classList.add('dragging');
+        container.classList.add("dragging");
         dragStartX = e.clientX;
         dragStartY = e.clientY;
         startTranslateX = translateX;
         startTranslateY = translateY;
       });
 
-      window.addEventListener('mousemove', function(e) {
+      window.addEventListener("mousemove", function (e) {
         if (!isDragging) return;
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-        translateX = startTranslateX + dx;
-        translateY = startTranslateY + dy;
+        translateX = startTranslateX + (e.clientX - dragStartX);
+        translateY = startTranslateY + (e.clientY - dragStartY);
         applyTransform();
       });
 
-      window.addEventListener('mouseup', function() {
+      window.addEventListener("mouseup", function () {
         isDragging = false;
-        container.classList.remove('dragging');
+        container.classList.remove("dragging");
       });
 
-      viewport.addEventListener('mouseleave', function() {
+      viewport.addEventListener("mouseleave", function () {
         isDragging = false;
-        container.classList.remove('dragging');
+        container.classList.remove("dragging");
       });
 
-      // Reset view
       function resetView() {
-        // Fit-to-screen με βάση το μέγεθος της εικόνας
         const vw = viewport.clientWidth;
         const vh = viewport.clientHeight;
         const iw = img.naturalWidth;
         const ih = img.naturalHeight;
 
-        if (iw && ih) {
-          const scaleFit = Math.min(vw / iw, vh / ih);
-          scale = clamp(scaleFit, minScale, 1); // να μην ξεπερνά αρχικό 1
-        } else {
-          scale = 0.2; // fallback
-        }
+        const fitScale = Math.min(vw / iw, vh / ih);
+        scale = Math.min(1, Math.max(minScale, fitScale));
 
-        // Κεντράρισμα
-        const displayWidth = iw * scale;
-        const displayHeight = ih * scale;
-        translateX = (vw - displayWidth) / 2;
-        translateY = (vh - displayHeight) / 2;
+        const displayW = iw * scale;
+        const displayH = ih * scale;
+        translateX = (vw - displayW) / 2;
+        translateY = (vh - displayH) / 2;
 
         applyTransform();
       }
 
-      img.addEventListener('load', resetView);
+      img.addEventListener("load", () => {
+        resetView();
+        setTimeout(() => {
+          loader.classList.add("hidden");
+        }, 400);
+      });
 
-      resetViewBtn.addEventListener('click', resetView);
+      resetViewBtn.addEventListener("click", resetView);
 
-      // Light/Dark toggle
-      toggleThemeBtn.addEventListener('click', function() {
-        const isLight = document.body.classList.toggle('light');
-        toggleThemeBtn.textContent = isLight ? 'Dark mode' : 'Light mode';
+      toggleThemeBtn.addEventListener("click", function () {
+        const isLight = document.body.classList.toggle("light");
+        toggleThemeBtn.textContent = isLight ? "Dark mode" : "Light mode";
       });
     })();
   </script>
