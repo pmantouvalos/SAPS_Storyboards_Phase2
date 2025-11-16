@@ -3,8 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <title>SAPS Storyboards Viewer</title>
+
+  <!-- Εξωτερικό CSS -->
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- Fix για το άσπρο flash στην αρχή -->
+  <style>
+    body { background: #0b0f17 !important; }
+  </style>
 </head>
 
 <body>
@@ -12,8 +19,7 @@
   <!-- CINEMATIC LOADING SCREEN -->
   <div id="loader" class="loader-screen">
     <div class="loader-inner">
-      <img src="logo.svg" class="loader-logo" />
-
+      <img src="logo.svg" class="loader-logo" alt="SAPS Project Logo" />
       <div class="loader-ring"></div>
       <div class="loader-text">Loading SAPS Diagram…</div>
     </div>
@@ -79,6 +85,7 @@
           `translate(${translateX}px, ${translateY}px) scale(${scale})`;
       }
 
+      // Zoom με ροδάκι
       viewport.addEventListener(
         "wheel",
         function (e) {
@@ -104,6 +111,7 @@
         { passive: false }
       );
 
+      // Drag για pan
       viewport.addEventListener("mousedown", function (e) {
         isDragging = true;
         container.classList.add("dragging");
@@ -130,11 +138,14 @@
         container.classList.remove("dragging");
       });
 
+      // Fit-to-screen + κεντράρισμα
       function resetView() {
         const vw = viewport.clientWidth;
         const vh = viewport.clientHeight;
         const iw = img.naturalWidth;
         const ih = img.naturalHeight;
+
+        if (!iw || !ih) return;
 
         const fitScale = Math.min(vw / iw, vh / ih);
         scale = Math.min(1, Math.max(minScale, fitScale));
@@ -147,6 +158,7 @@
         applyTransform();
       }
 
+      // Όταν φορτώσει η εικόνα → στήνουμε view + κρύβουμε loader
       img.addEventListener("load", () => {
         resetView();
         setTimeout(() => {
@@ -156,6 +168,7 @@
 
       resetViewBtn.addEventListener("click", resetView);
 
+      // Light / Dark toggle
       toggleThemeBtn.addEventListener("click", function () {
         const isLight = document.body.classList.toggle("light");
         toggleThemeBtn.textContent = isLight ? "Dark mode" : "Light mode";
