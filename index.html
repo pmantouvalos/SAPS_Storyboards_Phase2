@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <title>SAPS Storyboards Diagram</title>
+  <style>
+    :root {
+      --bg-color: #111;
+      --panel-bg: rgba(0, 0, 0, 0.7);
+      --text-color: #f5f5f5;
+      --btn-bg: #222;
+      --btn-bg-hover: #333;
+      --btn-border: #555;
+    }
+
+    body.light {
+      --bg-color: #f5f5f5;
+      --panel-bg: rgba(255, 255, 255, 0.9);
+      --text-color: #111;
+      --btn-bg: #ffffff;
+      --btn-bg-hover: #e6e6e6;
+      --btn-border: #ccc;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: var(--panel-bg);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--btn-border);
+      backdrop-filter: blur(6px);
+    }
+
+    .toolbar button,
+    .toolbar a {
+      border: 1px solid var(--btn-border);
+      background: var(--btn-bg);
+      color: var(--text-color);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .toolbar button:hover,
+    .toolbar a:hover {
+      background: var(--btn-bg-hover);
+    }
+
+    .toolbar small {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+
+    .container.dragging {
+      cursor: grabbing;
+    }
+
+    .viewport {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .image-wrapper {
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    img {
+      display: block;
+      max-width: none;
+      height: auto;
+      image-rendering: auto;
+      border: 1px solid #444;
+      box-shadow: 0 0 15px rgba(0,0,0,0.7);
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-bg);
+      color: var(--text-color);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      border: 1px solid var(--btn-border);
+    }
+
+    @media (max-width: 600px) {
+      .toolbar {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="toggleThemeBtn">Light mode</button>
+    <button id="resetViewBtn">Reset view</button>
+    <a href="sapsfinalstoryboards.drawio.png" download>Download PNG</a>
+    <small>Scroll = zoom · Drag = pan</small>
+  </div>
+
+  <div class="container" id="container">
+    <div class="viewport" id="viewport">
+      <div class="image-wrapper" id="imageWrapper">
+        <img id="diagramImage" src="sapsfinalstoryboards.drawio.png" alt="SAPS Storyboards Diagram">
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">
+    Χρησιμοποίησε το ροδάκι για zoom και drag με το ποντίκι για μετακίνηση.
+  </div>
+
+  <script>
+    (function() {
+      const container = document.getElementById('container');
+      const viewport = document.getElementById('viewport');
+      const imageWrapper = document.getElementById('imageWrapper');
+      const img = document.getElementById('diagramImage');
+      const toggleThemeBtn = document.getElementById('toggleThemeBtn');
+      const resetViewBtn = document.getElementById('resetViewBtn');
+
+      let scale = 1;
+      let minScale = 0.1;
+      let maxScale = 4;
+      let translateX = 0;
+      let translateY = 0;
+
+      let isDragging = false;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let startTranslateX = 0;
+      let startTranslateY = 0;
+
+      function applyTransform() {
+        imageWrapper.style.transform =
+          `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      // Zoom με ροδάκι, με κέντρο το σημείο του mouse
+      viewport.addEventListener('wheel', function(e) {
+        e.preventDefault();
+
+        const rect = viewport.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+        const newScale = clamp(scale * zoomFactor, minScale, maxScale);
+
+        // Προσαρμογή μετατόπισης ώστε το σημείο κάτω από τον κέρσορα
+        // να μείνει περίπου στο ίδιο σημείο
+        const scaleRatio = newScale / scale;
+        translateX = offsetX - (offsetX - translateX) * scaleRatio;
+        translateY = offsetY - (offsetY - translateY) * scaleRatio;
+
+        scale = newScale;
+        applyTransform();
+      }, { passive: false });
+
+      // Drag για pan
+      viewport.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        container.classList.add('dragging');
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        startTranslateX = translateX;
+        startTranslateY = translateY;
+      });
+
+      window.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        translateX = startTranslateX + dx;
+        translateY = startTranslateY + dy;
+        applyTransform();
+      });
+
+      window.addEventListener('mouseup', function() {
+        isDragging = false;
+        container.classList.remove('dragging');
+      });
+
+      viewport.addEventListener('mouseleave', function() {
+        isDragging = false;
+        container.classList.remove('dragging');
+      });
+
+      // Reset view
+      function resetView() {
+        // Fit-to-screen με βάση το μέγεθος της εικόνας
+        const vw = viewport.clientWidth;
+        const vh = viewport.clientHeight;
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+
+        if (iw && ih) {
+          const scaleFit = Math.min(vw / iw, vh / ih);
+          scale = clamp(scaleFit, minScale, 1); // να μην ξεπερνά αρχικό 1
+        } else {
+          scale = 0.2; // fallback
+        }
+
+        // Κεντράρισμα
+        const displayWidth = iw * scale;
+        const displayHeight = ih * scale;
+        translateX = (vw - displayWidth) / 2;
+        translateY = (vh - displayHeight) / 2;
+
+        applyTransform();
+      }
+
+      img.addEventListener('load', resetView);
+
+      resetViewBtn.addEventListener('click', resetView);
+
+      // Light/Dark toggle
+      toggleThemeBtn.addEventListener('click', function() {
+        const isLight = document.body.classList.toggle('light');
+        toggleThemeBtn.textContent = isLight ? 'Dark mode' : 'Light mode';
+      });
+    })();
+  </script>
+</body>
+</html>
