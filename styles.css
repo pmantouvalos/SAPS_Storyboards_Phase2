@@ -34,6 +34,11 @@ body.light {
    GLOBAL PAGE
    ================================ */
 
+html,
+body {
+  background: #0b0f17;
+}
+
 body {
   margin: 0;
   font-family: "Inter", Arial, sans-serif;
@@ -80,7 +85,7 @@ body {
 }
 
 .loader-logo {
-  width: 100px;
+  width: 260px; /* ΜΕΓΑΛΥΤΕΡΟ LOGO */
   opacity: 0.9;
   filter: drop-shadow(0 0 12px var(--glow));
   animation: pulseGlow 2.7s infinite ease-in-out;
